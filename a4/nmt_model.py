@@ -259,7 +259,7 @@ class NMT(nn.Module):
         y = self.model_embeddings.target(target_padded)
         ys = torch.split(y, 1, dim=0)
         for y_t in ys:
-            y_t = y_t.squeeze()
+            y_t = y_t.squeeze(0)
             Ybar_t = torch.cat((o_prev, y_t), dim = 1)
             dec_state, combined_output, e_t = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
             combined_outputs.append(combined_output)
@@ -326,8 +326,10 @@ class NMT(nn.Module):
         
         dec_state = self.decoder(Ybar_t, dec_state)
         dec_hidden, dec_cell = dec_state
+        #print("dec_hidden",dec_hidden.shape)
+        #print("enc_hiddens_proj",enc_hiddens_proj.shape)
         e_t = torch.bmm(dec_hidden.unsqueeze(1), enc_hiddens_proj.permute(0,2,1))
-        e_t = e_t.squeeze()
+        e_t = e_t.squeeze(1)
         
         
 
@@ -369,7 +371,7 @@ class NMT(nn.Module):
         ### END YOUR CODE
         alpha_t = F.softmax(e_t)
         
-        a_t = torch.bmm(alpha_t.unsqueeze(1), enc_hiddens).squeeze()
+        a_t = torch.bmm(alpha_t.unsqueeze(1), enc_hiddens).squeeze(1)
         U_t = torch.cat((dec_hidden,a_t), dim = 1)
         V_t = self.combined_output_projection(U_t)
         O_t = self.dropout(torch.tanh(V_t))
