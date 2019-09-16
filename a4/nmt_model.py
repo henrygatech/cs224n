@@ -328,8 +328,9 @@ class NMT(nn.Module):
         dec_hidden, dec_cell = dec_state
         #print("dec_hidden",dec_hidden.shape)
         #print("enc_hiddens_proj",enc_hiddens_proj.shape)
-        e_t = torch.bmm(dec_hidden.unsqueeze(1), enc_hiddens_proj.permute(0,2,1))
-        e_t = e_t.squeeze(1)
+        
+        e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(2))
+        e_t = e_t.squeeze(2)
         
         
 
@@ -337,7 +338,7 @@ class NMT(nn.Module):
 
         # Set e_t to -inf where enc_masks has 1
         if enc_masks is not None:
-            e_t.data.masked_fill_(enc_masks.byte(), -float('inf'))
+            e_t.data.masked_fill_(enc_masks.bool(), -float('inf'))
 
         ### YOUR CODE HERE (~6 Lines)
         ### TODO:
@@ -369,7 +370,7 @@ class NMT(nn.Module):
 
 
         ### END YOUR CODE
-        alpha_t = F.softmax(e_t)
+        alpha_t = F.softmax(e_t, dim = 1)
         
         a_t = torch.bmm(alpha_t.unsqueeze(1), enc_hiddens).squeeze(1)
         U_t = torch.cat((dec_hidden,a_t), dim = 1)
