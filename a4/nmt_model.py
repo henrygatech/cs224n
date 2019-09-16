@@ -74,12 +74,12 @@ class NMT(nn.Module):
         ###     Dropout Layer:
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
         self.encoder = nn.LSTM(embed_size, hidden_size, 1, bias = True, bidirectional = True)
-        self.decoder = nn.LSTMCell((embed_size+hidden_size), hidden_size, bias = True)
+        self.decoder = nn.LSTMCell((embed_size+hidden_size), hidden_size, bias = True) # **
         self.h_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
         self.c_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
         self.att_projection = nn.Linear(2*hidden_size, hidden_size, bias=False)
         self.combined_output_projection = nn.Linear(3*hidden_size, hidden_size, bias=False)
-        self.target_vocab_projection = nn.Linear(hidden_size, len(self.vocab.tgt))
+        self.target_vocab_projection = nn.Linear(hidden_size, len(self.vocab.tgt), bias=False)
         self.dropout = nn.Dropout(p=dropout_rate)
 
         ### END YOUR CODE
@@ -176,7 +176,9 @@ class NMT(nn.Module):
         enc_hiddens, enc_hiddens_len = pad_packed_sequence(enc_hiddens)
         enc_hiddens = enc_hiddens.permute(1,0,2)
         last_hidden = last_hidden.permute(1,0,2)
+        #print("last_hidden", last_hidden.shape)
         last_hidden =  torch.cat((last_hidden[:,0,:], last_hidden[:,1,:]),dim = 1)
+        #print("last_hidden", last_hidden.shape)
         last_cell = last_cell.permute(1,0,2)
         last_cell =  torch.cat((last_cell[:,0,:], last_cell[:,1,:]),dim = 1)
         init_decoder_hidden = self.h_projection(last_hidden) # b, h
@@ -331,8 +333,6 @@ class NMT(nn.Module):
         
         e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(2))
         e_t = e_t.squeeze(2)
-        
-        
 
         ### END YOUR CODE
 
